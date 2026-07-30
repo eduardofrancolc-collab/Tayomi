@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>MangaReader Pro</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #0a0a0a; color: #fff;
+  overflow: hidden; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ===== VARIABLES ===== */
+:root {
+  --accent: #ff6b35;
+  --accent-hover: #ff8555;
+  --surface: #141414;
+  --surface-raised: #1e1e1e;
+  --surface-strong: #2a2a2a;
+  --border: rgba(255,255,255,0.08);
+  --text-primary: #fff;
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-muted: rgba(255,255,255,0.35);
+  --danger: #ef4444;
+  --positive: #22c55e;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4,0,0.2,1);
+  --transition-slow: 0.4s cubic-bezier(0.4,0,0.2,1);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+/* ===== APP SHELL ===== */
+#app { width: 100%; height: 100%; position: relative; }
+
+/* ===== VIEW SYSTEM ===== */
+.view {
+  position: fixed; inset: 0;
+  display: none; flex-direction: column;
+  background: #0a0a0a;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  z-index: 1;
+}
+.view.active {
+  display: flex; opacity: 1; transform: translateY(0);
+}
+
+/* ===== HEADER ===== */
+.app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,10,0.85);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  padding-top: calc(12px + var(--safe-top));
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); background: var(--surface-raised);
+  color: var(--text-primary); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.btn:hover { background: var(--surface-strong); border-color: rgba(255,255,255,0.15); }
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: var(--danger); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
+.btn-ghost:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+.btn-sm { padding: 6px 10px; font-size: 13px; border-radius: var(--radius-sm); }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm);
+}
+.btn-icon svg { width: 18px; height: 18px; }
+
+/* ===== CONTENT AREA ===== */
+.content {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 16px; padding-bottom: calc(16px + var(--safe-bottom));
+}
+
+/* ===== MANGA GRID ===== */
+.manga-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+.manga-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-normal);
+  animation: cardIn 0.4s ease both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.manga-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.manga-card:active { transform: scale(0.98); }
+.manga-cover {
+  width: 100%; aspect-ratio: 3/4;
+  object-fit: cover; display: block;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+}
+.manga-card-info {
+  padding: 10px 12px;
+}
+.manga-card-title {
+  font-size: 14px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.manga-card-meta {
+  font-size: 12px; color: var(--text-muted);
+}
+.manga-card-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center; color: var(--text-muted);
+}
+.empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.3; }
+.empty-state h3 { color: var(--text-secondary); font-size: 16px; margin-bottom: 6px; }
+.empty-state p { font-size: 14px; }
+
+/* ===== MANGA DETAIL ===== */
+.manga-detail-header {
+  display: flex; gap: 16px; margin-bottom: 24px;
+}
+.manga-detail-cover {
+  width: 120px; min-width: 120px; aspect-ratio: 3/4;
+  border-radius: var(--radius-lg); object-fit: cover;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid var(--border);
+}
+.manga-detail-info { flex: 1; }
+.manga-detail-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; line-height: 1.2; }
+.manga-detail-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.manga-detail-desc {
+  font-size: 14px; color: var(--text-secondary); line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.chapter-list { display: flex; flex-direction: column; gap: 8px; }
+.chapter-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-radius: var(--radius-md);
+  background: var(--surface); border: 1px solid var(--border);
+  cursor: pointer; transition: all var(--transition-fast);
+}
+.chapter-item:hover { background: var(--surface-raised); border-color: rgba(255,255,255,0.12); }
+.chapter-item:active { transform: scale(0.995); }
+.chapter-item-left { display: flex; align-items: center; gap: 12px; }
+.chapter-number {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: var(--surface-strong); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--accent);
+}
+.chapter-title { font-size: 14px; font-weight: 500; }
+.chapter-pages { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.chapter-item-right { display: flex; align-items: center; gap: 8px; }
+.chapter-read-btn {
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  background: var(--accent); color: #fff; font-size: 12px; font-weight: 600;
+  border: none; cursor: pointer; transition: opacity var(--transition-fast);
+}
+.chapter-read-btn:hover { opacity: 0.85; }
+
+/* ===== ADMIN PANEL ===== */
+.admin-section { margin-bottom: 24px; }
+.admin-section-title {
+  font-size: 13px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px;
+}
+.admin-form {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px;
+}
+.form-group { margin-bottom: 14px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label {
+  display: block; font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); margin-bottom: 6px;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%; padding: 10px 12px;
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-size: 14px; font-family: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,53,0.1);
+}
+.form-textarea { min-height: 80px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+.admin-manga-list { display: flex; flex-direction: column; gap: 8px; }
+.admin-manga-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: var(--radius-md);
+  background: var(--surface); border: 1px solid var(--border);
+  transition: background var(--transition-fast);
+}
+.admin-manga-item:hover { background: var(--surface-raised); }
+.admin-manga-thumb {
+  width: 48px; height: 64px; border-radius: var(--radius-sm);
+  object-fit: cover; background: var(--surface-strong);
+}
+.admin-manga-info { flex: 1; min-width: 0; }
+.admin-manga-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-manga-chaps { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.admin-manga-actions { display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition-fast); }
+.admin-manga-item:hover .admin-manga-actions { opacity: 1; }
+
+/* ===== PAGE MANAGER ===== */
+.page-manager {
+  border: 2px dashed var(--border); border-radius: var(--radius-lg);
+  padding: 20px; text-align: center; margin-bottom: 16px;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.page-manager.dragover { border-color: var(--accent); background: rgba(255,107,53,0.05); }
+.page-manager-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+.page-manager small { font-size: 11px; color: var(--text-muted); opacity: 0.7; }
+.page-preview-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px; margin-top: 12px;
+}
+.page-preview-item {
+  position: relative; aspect-ratio: 3/4; border-radius: var(--radius-sm);
+  overflow: hidden; border: 1px solid var(--border); cursor: grab;
+  background: var(--surface-strong);
+}
+.page-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+.page-preview-item.dragging { opacity: 0.5; transform: scale(0.95); }
+.page-preview-item .page-num {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.7); color: #fff; font-size: 10px;
+  padding: 2px 4px; text-align: center;
+}
+.page-preview-item .page-remove {
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--danger); color: #fff; border: none;
+  font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--transition-fast);
+}
+.page-preview-item:hover .page-remove { opacity: 1; }
+
+/* ===== READER ===== */
+#reader-view {
+  background: #000; z-index: 200;
+}
+.reader-container {
+  position: relative; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.reader-page {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  opacity: 0; transform: translateX(30px);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  user-select: none; -webkit-user-drag: none;
+}
+.reader-page.loaded {
+  opacity: 1; transform: translateX(0);
+}
+.reader-page.prev {
+  transform: translateX(-30px);
+}
+
+/* Touch zones */
+.reader-touch-zone {
+  position: absolute; top: 0; bottom: 0; z-index: 10;
+  width: 33%; cursor: pointer;
+}
+.reader-touch-zone.left { left: 0; }
+.reader-touch-zone.center { left: 33%; width: 34%; z-index: 11; }
+.reader-touch-zone.right { right: 0; }
+
+/* Loading spinner */
+.reader-loading {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 5; pointer-events: none;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.reader-loading p {
+  margin-top: 12px; font-size: 13px; color: var(--text-muted);
+}
+
+/* Reader overlay UI */
+.reader-overlay {
+  position: absolute; inset: 0; z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+.reader-overlay.visible { opacity: 1; pointer-events: auto; }
+
+.reader-top-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 12px 16px;
+  padding-top: calc(12px + var(--safe-top));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+  display: flex; align-items: center; justify-content: space-between;
+  transform: translateY(-100%);
+  transition: transform var(--transition-normal);
+}
+.reader-overlay.visible .reader-top-bar { transform: translateY(0); }
+
+.reader-bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--safe-bottom));
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+  transform: translateY(100%);
+  transition: transform var(--transition-normal);
+}
+.reader-overlay.visible .reader-bottom-bar { transform: translateY(0); }
+
+.reader-title { font-size: 15px; font-weight: 600; }
+.reader-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.reader-progress-container {
+  display: flex; align-items: center; gap: 12px;
+}
+.reader-progress-bar-bg {
+  flex: 1; height: 4px; background: rgba(255,255,255,0.15);
+  border-radius: 2px; overflow: hidden;
+}
+.reader-progress-bar-fill {
+  height: 100%; background: var(--accent); border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.reader-progress-text {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  min-width: 40px; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.reader-nav-hint {
+  display: flex; justify-content: space-between;
+  margin-top: 10px; font-size: 11px; color: var(--text-muted);
+}
+
+/* Reader nav buttons */
+.reader-nav-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 80px;
+  background: rgba(0,0,0,0.4); border: none;
+  color: #fff; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--transition-fast), background var(--transition-fast);
+  z-index: 15; border-radius: 0;
+}
+.reader-nav-btn:hover { background: rgba(0,0,0,0.6); }
+.reader-nav-btn.prev { left: 0; border-radius: 0 8px 8px 0; }
+.reader-nav-btn.next { right: 0; border-radius: 8px 0 0 8px; }
+.reader-overlay.visible .reader-nav-btn { opacity: 1; }
+
+/* Swipe hint animation */
+.swipe-hint {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  animation: swipePulse 2s ease-in-out infinite;
+  pointer-events: none; z-index: 8; opacity: 0;
+}
+.swipe-hint.left { left: 20px; }
+.swipe-hint.right { right: 20px; }
+@keyframes swipePulse {
+  0%, 100% { opacity: 0; transform: translateY(-50%) scale(0.8); }
+  50% { opacity: 0.6; transform: translateY(-50%) scale(1); }
+}
+
+/* Chapter end screen */
+.reader-end-screen {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.95); z-index: 30;
+  padding: 24px; text-align: center;
+}
+.reader-end-screen.active { display: flex; }
+.reader-end-screen h2 { font-size: 22px; margin-bottom: 8px; }
+.reader-end-screen p { color: var(--text-muted); margin-bottom: 24px; }
+.reader-end-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+  opacity: 0; transition: opacity var(--transition-normal);
+}
+.modal-overlay.active { display: flex; opacity: 1; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); width: 100%; max-width: 420px;
+  max-height: 85vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  transform: scale(0.95); transition: transform var(--transition-normal);
+}
+.modal-overlay.active .modal { transform: scale(1); }
+.modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 12px 20px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 2000; display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface-strong); color: var(--text-primary);
+  padding: 10px 18px; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  pointer-events: auto;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  to { opacity: 0; transform: translateY(10px); }
+}
+
+/* ===== TABS ===== */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab {
+  padding: 8px 16px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  color: var(--text-muted); background: transparent; border: none;
+  transition: all var(--transition-fast);
+}
+.tab.active { color: var(--text-primary); background: var(--surface-raised); }
+.tab:hover:not(.active) { color: var(--text-secondary); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: fadeInUp 0.35s ease both; }
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 768px) {
+  .manga-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .manga-detail-header { gap: 24px; }
+  .manga-detail-cover { width: 160px; min-width: 160px; }
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div id="app">
+
+<!-- ===== HOME VIEW ===== -->
+<div id="home-view" class="view active">
+  <header class="app-header">
+    <h1>MangaReader Pro</h1>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-icon" onclick="app.goToAdmin()" title="Painel Admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="content" id="home-content">
+    <div class="empty-state" id="home-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      <h3>Nenhum mangá ainda</h3>
+      <p>Adicione seus mangás no painel de administração</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="app.goToAdmin()">Ir para Admin</button>
+    </div>
+    <div class="manga-grid" id="manga-grid" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ===== MANGA DETAIL VIEW ===== -->
+<div id="detail-view" class="view">
+  <header class="app-header">
+    <button class="btn btn-ghost btn-icon" onclick="app.goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-icon" onclick="app.editCurrentManga()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="content" id="detail-content"></div>
+</div>
+
+<!-- ===== ADMIN VIEW ===== -->
+<div id="admin-view" class="view">
+  <header class="app-header">
+    <button class="btn btn-ghost btn-icon" onclick="app.goHome()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <h1 style="font-size:16px">Painel Admin</h1>
+    <div style="width:36px"></div>
+  </header>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab active" onclick="app.switchAdminTab('mangas')" data-tab="mangas">Mangás</button>
+      <button class="tab" onclick="app.switchAdminTab('add')" data-tab="add">Adicionar</button>
+    </div>
+
+    <!-- Tab: Mangás -->
+    <div id="admin-tab-mangas">
+      <div class="admin-manga-list" id="admin-manga-list"></div>
+    </div>
+
+    <!-- Tab: Adicionar/Editar -->
+    <div id="admin-tab-add" style="display:none">
+      <div class="admin-section">
+        <div class="admin-section-title">Informações do Mangá</div>
+        <div class="admin-form">
+          <input type="hidden" id="edit-manga-id">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Título</label>
+              <input type="text" class="form-input" id="manga-title" placeholder="Ex: One Piece">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Autor</label>
+              <input type="text" class="form-input" id="manga-author" placeholder="Ex: Eiichiro Oda">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descrição</label>
+            <textarea class="form-textarea" id="manga-desc" placeholder="Sinopse do mangá..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Capa (URL da imagem)</label>
+            <input type="text" class="form-input" id="manga-cover" placeholder="https://...">
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Capítulo</div>
+        <div class="admin-form">
+          <input type="hidden" id="edit-chapter-id">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Número do Capítulo</label>
+              <input type="text" class="form-input" id="chapter-number" placeholder="Ex: 1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Título do Capítulo (opcional)</label>
+              <input type="text" class="form-input" id="chapter-title" placeholder="Ex: O início da jornada">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Páginas do Capítulo</div>
+        <div class="admin-form">
+          <div class="page-manager" id="page-manager"
+               ondragover="app.handleDragOver(event)"
+               ondragleave="app.handleDragLeave(event)"
+               ondrop="app.handleDrop(event)">
+            <div class="page-manager-hint">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;opacity:0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Arraste imagens aqui ou cole URLs</div>
+            </div>
+            <small>ou cole URLs de imagens separadas por vírgula/linha</small>
+            <textarea class="form-textarea" id="page-urls" style="margin-top:12px;min-height:60px;font-size:12px" placeholder="https://exemplo.com/pag1.jpg&#10;https://exemplo.com/pag2.jpg"></textarea>
+          </div>
+          <div class="page-preview-grid" id="page-preview-grid"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="app.clearPages()">Limpar</button>
+            <button class="btn btn-primary" onclick="app.saveManga()">Salvar Mangá / Capítulo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== READER VIEW ===== -->
+<div id="reader-view" class="view">
+  <div class="reader-container" id="reader-container">
+    <img class="reader-page" id="reader-page" src="" alt="Página do mangá">
+
+    <div class="reader-loading" id="reader-loading">
+      <div class="spinner"></div>
+      <p>Carregando página...</p>
+    </div>
+
+    <!-- Touch zones -->
+    <div class="reader-touch-zone left" onclick="app.readerPrev()"></div>
+    <div class="reader-touch-zone center" onclick="app.readerToggleUI()"></div>
+    <div class="reader-touch-zone right" onclick="app.readerNext()"></div>
+
+    <!-- Nav buttons (visible when UI shown) -->
+    <button class="reader-nav-btn prev" onclick="app.readerPrev()">&#8249;</button>
+    <button class="reader-nav-btn next" onclick="app.readerNext()">&#8250;</button>
+
+    <!-- Swipe hints -->
+    <div class="swipe-hint left" id="swipe-hint-left"></div>
+    <div class="swipe-hint right" id="swipe-hint-right"></div>
+
+    <!-- Overlay UI -->
+    <div class="reader-overlay" id="reader-overlay">
+      <div class="reader-top-bar">
+        <div>
+          <button class="btn btn-ghost btn-icon" onclick="app.readerClose()" style="margin-right:8px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </button>
+          <span class="reader-title" id="reader-manga-title">Mangá</span>
+          <div class="reader-subtitle" id="reader-chapter-title">Capítulo 1</div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="app.toggleFullscreen()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+      </div>
+      <div class="reader-bottom-bar">
+        <div class="reader-progress-container">
+          <div class="reader-progress-bar-bg">
+            <div class="reader-progress-bar-fill" id="reader-progress-fill" style="width:0%"></div>
+          </div>
+          <span class="reader-progress-text" id="reader-progress-text">0%</span>
+        </div>
+        <div class="reader-nav-hint">
+          <span>&#8592; Anterior</span>
+          <span id="reader-page-counter">1 / 1</span>
+          <span>Próximo &#8594;</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapter end -->
+    <div class="reader-end-screen" id="reader-end-screen">
+      <h2>Fim do Capítulo</h2>
+      <p id="reader-end-subtitle">Você terminou o capítulo!</p>
+      <div class="reader-end-actions">
+        <button class="btn btn-ghost" onclick="app.readerClose()">Voltar</button>
+        <button class="btn btn-primary" id="reader-next-chapter-btn" onclick="app.readerNextChapter()">Próximo Capítulo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)app.closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Título</h3>
+      <button class="btn btn-ghost btn-icon" onclick="app.closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-container" id="toast-container"></div>
+
+</div><!-- /app -->
+
+<script>
+// ===== APP STATE =====
+const app = {
+  data: { mangas: [] },
+  currentManga: null,
+  currentChapter: null,
+  readerState: { pageIndex: 0, uiVisible: false, pages: [] },
+  tempPages: [],
+  dragSrc: null,
+
+  init() {
+    this.loadData();
+    this.renderHome();
+    this.setupKeyboard();
+    this.setupSwipe();
+    this.setupPaste();
+    // Auto fullscreen on mobile when entering reader
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.chapter-read-btn') || e.target.closest('.reader-touch-zone')) {
+        this.requestFullscreen();
+      }
+    });
+  },
+
+  // ===== STORAGE =====
+  loadData() {
+    try {
+      const raw = localStorage.getItem('mangareader_data');
+      if (raw) this.data = JSON.parse(raw);
+    } catch(e) { console.error(e); }
+  },
+  saveData() {
+    localStorage.setItem('mangareader_data', JSON.stringify(this.data));
+  },
+
+  // ===== NAVIGATION =====
+  switchView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+  },
+  goHome() { this.switchView('home-view'); this.renderHome(); },
+  goToAdmin() { this.switchView('admin-view'); this.renderAdminMangas(); this.switchAdminTab('mangas'); },
+  goToDetail(mangaId) {
+    this.currentManga = this.data.mangas.find(m => m.id === mangaId);
+    if (!this.currentManga) return;
+    this.renderDetail();
+    this.switchView('detail-view');
+  },
+
+  // ===== HOME =====
+  renderHome() {
+    const grid = document.getElementById('manga-grid');
+    const empty = document.getElementById('home-empty');
+    if (!this.data.mangas.length) {
+      grid.style.display = 'none'; empty.style.display = 'flex';
+      return;
+    }
+    empty.style.display = 'none'; grid.style.display = 'grid';
+    grid.innerHTML = this.data.mangas.map((m, i) => {
+      const totalChaps = m.chapters?.length || 0;
+      const totalPages = m.chapters?.reduce((a,c) => a + (c.pages?.length||0), 0) || 0;
+      return `
+        <div class="manga-card animate-in" style="animation-delay:${i*0.05}s" onclick="app.goToDetail('${m.id}')">
+          <img class="manga-cover" src="${m.cover || ''}" alt="${m.title}" onerror="this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'">
+          ${totalChaps > 0 ? `<span class="manga-card-badge">${totalChaps} cap</span>` : ''}
+          <div class="manga-card-info">
+            <div class="manga-card-title">${this.escapeHtml(m.title)}</div>
+            <div class="manga-card-meta">${this.escapeHtml(m.author || 'Autor desconhecido')} · ${totalPages} pág</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  // ===== DETAIL =====
+  renderDetail() {
+    const m = this.currentManga;
+    const container = document.getElementById('detail-content');
+    const chaps = m.chapters || [];
+    // Sort chapters by number
+    chaps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+    container.innerHTML = `
+      <div class="animate-in">
+        <div class="manga-detail-header">
+          <img class="manga-detail-cover" src="${m.cover || ''}" alt="${m.title}" onerror="this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'">
+          <div class="manga-detail-info">
+            <div class="manga-detail-title">${this.escapeHtml(m.title)}</div>
+            <div class="manga-detail-meta">${this.escapeHtml(m.author || 'Autor desconhecido')} · ${chaps.length} capítulos</div>
+            <div class="manga-detail-desc">${this.escapeHtml(m.description || 'Sem descrição.')}</div>
+          </div>
+        </div>
+        <div class="admin-section">
+          <div class="admin-section-title">Capítulos</div>
+          <div class="chapter-list">
+            ${chaps.length ? chaps.map((c, i) => `
+              <div class="chapter-item" onclick="app.openReader('${m.id}', '${c.id}')">
+                <div class="chapter-item-left">
+                  <div class="chapter-number">${c.number}</div>
+                  <div>
+                    <div class="chapter-title">${this.escapeHtml(c.title || `Capítulo ${c.number}`)}</div>
+                    <div class="chapter-pages">${c.pages?.length || 0} páginas</div>
+                  </div>
+                </div>
+                <div class="chapter-item-right">
+                  <button class="chapter-read-btn" onclick="event.stopPropagation();app.openReader('${m.id}','${c.id}')">Ler</button>
+                </div>
+              </div>
+            `).join('') : '<div style="color:var(--text-muted);font-size:14px;padding:20px;text-align:center">Nenhum capítulo adicionado ainda.</div>'}
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  editCurrentManga() {
+    if (!this.currentManga) return;
+    this.editManga(this.currentManga.id);
+  },
+
+  // ===== ADMIN =====
+  switchAdminTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('admin-tab-mangas').style.display = tab === 'mangas' ? 'block' : 'none';
+    document.getElementById('admin-tab-add').style.display = tab === 'add' ? 'block' : 'none';
+    if (tab === 'mangas') this.renderAdminMangas();
+  },
+  renderAdminMangas() {
+    const list = document.getElementById('admin-manga-list');
+    if (!this.data.mangas.length) {
+      list.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:24px">Nenhum mangá cadastrado. Vá em "Adicionar" para começar.</div>';
+      return;
+    }
+    list.innerHTML = this.data.mangas.map(m => {
+      const chapCount = m.chapters?.length || 0;
+      return `
+        <div class="admin-manga-item">
+          <img class="admin-manga-thumb" src="${m.cover || ''}" onerror="this.style.background='var(--surface-strong)'">
+          <div class="admin-manga-info">
+            <div class="admin-manga-title">${this.escapeHtml(m.title)}</div>
+            <div class="admin-manga-chaps">${chapCount} capítulos · ${this.escapeHtml(m.author || 'Sem autor')}</div>
+          </div>
+          <div class="admin-manga-actions">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="app.editManga('${m.id}')" title="Editar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="app.deleteManga('${m.id}')" title="Excluir">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  editManga(mangaId) {
+    const m = this.data.mangas.find(x => x.id === mangaId);
+    if (!m) return;
+    document.getElementById('edit-manga-id').value = m.id;
+    document.getElementById('manga-title').value = m.title;
+    document.getElementById('manga-author').value = m.author || '';
+    document.getElementById('manga-desc').value = m.description || '';
+    document.getElementById('manga-cover').value = m.cover || '';
+    // Clear chapter fields for new chapter
+    document.getElementById('edit-chapter-id').value = '';
+    document.getElementById('chapter-number').value = '';
+    document.getElementById('chapter-title').value = '';
+    this.tempPages = [];
+    this.renderPagePreviews();
+    this.switchAdminTab('add');
+    this.showToast('Editando: ' + m.title + '. Adicione um novo capítulo ou atualize os dados.');
+  },
+
+  deleteManga(mangaId) {
+    this.showModal('Excluir mangá', 'Tem certeza que deseja excluir este mangá e todos os seus capítulos? Esta ação não pode ser desfeita.', [
+      { text: 'Cancelar', class: 'btn-ghost', action: () => this.closeModal() },
+      { text: 'Excluir', class: 'btn-danger', action: () => {
+        this.data.mangas = this.data.mangas.filter(m => m.id !== mangaId);
+        this.saveData();
+        this.renderAdminMangas();
+        this.closeModal();
+        this.showToast('Mangá excluído');
+      }}
+    ]);
+  },
+
+  // ===== SAVE MANGA / CHAPTER =====
+  saveManga() {
+    const mangaId = document.getElementById('edit-manga-id').value;
+    const title = document.getElementById('manga-title').value.trim();
+    const author = document.getElementById('manga-author').value.trim();
+    const desc = document.getElementById('manga-desc').value.trim();
+    const cover = document.getElementById('manga-cover').value.trim();
+    const chapNum = document.getElementById('chapter-number').value.trim();
+    const chapTitle = document.getElementById('chapter-title').value.trim();
+
+    if (!title) { this.showToast('Digite o título do mangá'); return; }
+
+    // Get pages from textarea + temp drag-drop
+    const urlText = document.getElementById('page-urls').value;
+    const textUrls = urlText.split(/[
+,]+/).map(u => u.trim()).filter(u => u);
+    const allPages = [...this.tempPages, ...textUrls];
+
+    if (!mangaId) {
+      // New manga
+      if (!chapNum) { this.showToast('Digite o número do capítulo'); return; }
+      if (!allPages.length) { this.showToast('Adicione pelo menos uma página'); return; }
+      const newManga = {
+        id: 'm_' + Date.now(),
+        title, author, description: desc, cover,
+        chapters: [{
+          id: 'c_' + Date.now(),
+          number: chapNum,
+          title: chapTitle,
+          pages: allPages
+        }]
+      };
+      this.data.mangas.push(newManga);
+    } else {
+      // Existing manga
+      const m = this.data.mangas.find(x => x.id === mangaId);
+      if (!m) return;
+      m.title = title; m.author = author; m.description = desc; m.cover = cover;
+      if (chapNum) {
+        if (!allPages.length) { this.showToast('Adicione pelo menos uma página'); return; }
+        const existingChap = m.chapters?.find(c => c.number === chapNum);
+        if (existingChap) {
+          // Append pages to existing chapter
+          existingChap.pages = [...(existingChap.pages||[]), ...allPages];
+          existingChap.title = chapTitle || existingChap.title;
+        } else {
+          m.chapters = m.chapters || [];
+          m.chapters.push({
+            id: 'c_' + Date.now(),
+            number: chapNum,
+            title: chapTitle,
+            pages: allPages
+          });
+        }
+      }
+    }
+
+    this.saveData();
+    this.showToast('Salvo com sucesso!');
+    this.clearForm();
+    this.switchAdminTab('mangas');
+  },
+
+  clearForm() {
+    document.getElementById('edit-manga-id').value = '';
+    document.getElementById('manga-title').value = '';
+    document.getElementById('manga-author').value = '';
+    document.getElementById('manga-desc').value = '';
+    document.getElementById('manga-cover').value = '';
+    document.getElementById('edit-chapter-id').value = '';
+    document.getElementById('chapter-number').value = '';
+    document.getElementById('chapter-title').value = '';
+    document.getElementById('page-urls').value = '';
+    this.tempPages = [];
+    this.renderPagePreviews();
+  },
+
+  clearPages() {
+    this.tempPages = [];
+    document.getElementById('page-urls').value = '';
+    this.renderPagePreviews();
+  },
+
+  // ===== PAGE MANAGER (Drag & Drop) =====
+  handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+  },
+  handleDragLeave(e) {
+    e.currentTarget.classList.remove('dragover');
+  },
+  handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (!files.length) { this.showToast('Arraste apenas imagens'); return; }
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderPagePreviews(); };
+      reader.readAsDataURL(file);
+    });
+    this.showToast(`${files.length} imagem(ns) adicionada(s)`);
+  },
+  renderPagePreviews() {
+    const grid = document.getElementById('page-preview-grid');
+    const all = [...this.tempPages, ...document.getElementById('page-urls').value.split(/[
+,]+/).map(u=>u.trim()).filter(u=>u)];
+    grid.innerHTML = all.map((url, i) => `
+      <div class="page-preview-item" draggable="true"
+           ondragstart="app.pageDragStart(event,${i})"
+           ondragover="app.pageDragOver(event)"
+           ondrop="app.pageDrop(event,${i})"
+           ondragend="app.pageDragEnd(event)">
+        <img src="${url}" onerror="this.style.display='none'">
+        <div class="page-num">${i+1}</div>
+        <button class="page-remove" onclick="app.removePage(${i})">×</button>
+      </div>
+    `).join('');
+  },
+  pageDragStart(e, index) {
+    this.dragSrc = index;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  },
+  pageDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
+  pageDrop(e, index) {
+    e.preventDefault();
+    if (this.dragSrc === null || this.dragSrc === index) return;
+    const all = [...this.tempPages, ...document.getElementById('page-urls').value.split(/[
+,]+/).map(u=>u.trim()).filter(u=>u)];
+    const [moved] = all.splice(this.dragSrc, 1);
+    all.splice(index, 0, moved);
+    // Split back (simplified: all goes to tempPages, clear textarea)
+    this.tempPages = all;
+    document.getElementById('page-urls').value = '';
+    this.renderPagePreviews();
+  },
+  pageDragEnd(e) { e.target.classList.remove('dragging'); this.dragSrc = null; },
+  removePage(index) {
+    const textUrls = document.getElementById('page-urls').value.split(/[
+,]+/).map(u=>u.trim()).filter(u=>u);
+    if (index < this.tempPages.length) {
+      this.tempPages.splice(index, 1);
+    } else {
+      textUrls.splice(index - this.tempPages.length, 1);
+      document.getElementById('page-urls').value = textUrls.join('\n');
+    }
+    this.renderPagePreviews();
+  },
+  setupPaste() {
+    document.addEventListener('paste', (e) => {
+      if (!document.getElementById('admin-tab-add').offsetParent) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      let count = 0;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderPagePreviews(); };
+            reader.readAsDataURL(file);
+            count++;
+          }
+        }
+      }
+      if (count) this.showToast(`${count} imagem(ns) colada(s)`);
+    });
+  },
+
+  // ===== READER =====
+  openReader(mangaId, chapterId) {
+    const m = this.data.mangas.find(x => x.id === mangaId);
+    const c = m?.chapters?.find(x => x.id === chapterId);
+    if (!m || !c) return;
+    this.currentManga = m;
+    this.currentChapter = c;
+    this.readerState = { pageIndex: 0, uiVisible: false, pages: c.pages || [] };
+    if (!this.readerState.pages.length) { this.showToast('Capítulo sem páginas'); return; }
+
+    document.getElementById('reader-manga-title').textContent = m.title;
+    document.getElementById('reader-chapter-title').textContent = c.title || `Capítulo ${c.number}`;
+    document.getElementById('reader-end-screen').classList.remove('active');
+    this.readerLoadPage(0);
+    this.switchView('reader-view');
+    this.requestFullscreen();
+  },
+
+  readerLoadPage(index) {
+    const img = document.getElementById('reader-page');
+    const loading = document.getElementById('reader-loading');
+    const pages = this.readerState.pages;
+    if (index < 0) return;
+    if (index >= pages.length) {
+      this.showChapterEnd();
+      return;
+    }
+    this.readerState.pageIndex = index;
+    img.classList.remove('loaded');
+    loading.style.display = 'flex';
+    img.src = pages[index];
+    img.onload = () => {
+      img.classList.add('loaded');
+      loading.style.display = 'none';
+    };
+    img.onerror = () => {
+      loading.style.display = 'none';
+      img.classList.add('loaded');
+    };
+    this.updateReaderProgress();
+    document.getElementById('reader-end-screen').classList.remove('active');
+  },
+
+  readerNext() {
+    if (this.readerState.pageIndex < this.readerState.pages.length - 1) {
+      this.readerLoadPage(this.readerState.pageIndex + 1);
+    } else {
+      this.showChapterEnd();
+    }
+  },
+  readerPrev() {
+    if (this.readerState.pageIndex > 0) {
+      this.readerLoadPage(this.readerState.pageIndex - 1);
+    }
+  },
+  readerToggleUI() {
+    this.readerState.uiVisible = !this.readerState.uiVisible;
+    document.getElementById('reader-overlay').classList.toggle('visible', this.readerState.uiVisible);
+  },
+  readerClose() {
+    this.exitFullscreen();
+    this.goToDetail(this.currentManga?.id);
+  },
+  updateReaderProgress() {
+    const idx = this.readerState.pageIndex;
+    const total = this.readerState.pages.length;
+    const pct = total > 0 ? Math.round(((idx + 1) / total) * 100) : 0;
+    document.getElementById('reader-progress-fill').style.width = pct + '%';
+    document.getElementById('reader-progress-text').textContent = pct + '%';
+    document.getElementById('reader-page-counter').textContent = `${idx + 1} / ${total}`;
+  },
+  showChapterEnd() {
+    const m = this.currentManga;
+    const chaps = m?.chapters?.sort((a,b) => parseFloat(a.number)-parseFloat(b.number)) || [];
+    const curIdx = chaps.findIndex(c => c.id === this.currentChapter?.id);
+    const nextChap = chaps[curIdx + 1];
+    const endScreen = document.getElementById('reader-end-screen');
+    const nextBtn = document.getElementById('reader-next-chapter-btn');
+    document.getElementById('reader-end-subtitle').textContent = nextChap
+      ? `Próximo: Capítulo ${nextChap.number}`
+      : 'Este é o último capítulo disponível.';
+    nextBtn.style.display = nextChap ? 'inline-flex' : 'none';
+    nextBtn.onclick = () => { if(nextChap) this.openReader(m.id, nextChap.id); };
+    endScreen.classList.add('active');
+  },
+  readerNextChapter() {
+    // handled by showChapterEnd
+  },
+
+  // ===== FULLSCREEN =====
+  requestFullscreen() {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+  },
+  exitFullscreen() {
+    if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+  },
+  toggleFullscreen() {
+    if (document.fullscreenElement) this.exitFullscreen();
+    else this.requestFullscreen();
+  },
+
+  // ===== SWIPE =====
+  setupSwipe() {
+    let sx = 0, sy = 0, st = 0;
+    const container = document.getElementById('reader-container');
+    container.addEventListener('touchstart', (e) => {
+      sx = e.touches[0].clientX;
+      sy = e.touches[0].clientY;
+      st = Date.now();
+    }, { passive: true });
+    container.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - sx;
+      const dy = e.changedTouches[0].clientY - sy;
+      const dt = Date.now() - st;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40 && dt < 500) {
+        if (dx < 0) this.readerNext();
+        else this.readerPrev();
+      }
+    }, { passive: true });
+  },
+
+  // ===== KEYBOARD =====
+  setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('reader-view').classList.contains('active')) return;
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); this.readerNext(); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); this.readerPrev(); }
+      else if (e.key === 'Escape') { this.readerClose(); }
+      else if (e.key.toLowerCase() === 'f') { this.toggleFullscreen(); }
+    });
+  },
+
+  // ===== MODAL =====
+  showModal(title, body, actions) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-body').innerHTML = `<p style="font-size:14px;color:var(--text-secondary);line-height:1.6">${body}</p>`;
+    document.getElementById('modal-footer').innerHTML = actions.map(a =>
+      `<button class="btn ${a.class}" onclick="(${a.action.toString()})()">${a.text}</button>`
+    ).join('');
+    document.getElementById('modal-overlay').classList.add('active');
+  },
+  closeModal() {
+    document.getElementById('modal-overlay').classList.remove('active');
+  },
+
+  // ===== TOAST =====
+  showToast(msg) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    container.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  },
+
+  // ===== UTILS =====
+  escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+};
+
+// Initialize
+app.init();
+</script>
+</body>
+</html>
