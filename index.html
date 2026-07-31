@@ -7,7 +7,7 @@
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #fff; overflow: hidden; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-:root { --accent: #ff6b35; --surface: #141414; --surface-raised: #1e1e1e; --surface-strong: #2a2a2a; --border: rgba(255,255,255,0.08); --text-secondary: rgba(255,255,255,0.6); --text-muted: rgba(255,255,255,0.35); --danger: #ef4444; --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --t-fast: 0.15s ease; --t-normal: 0.25s cubic-bezier(0.4,0,0.2,1); }
+:root { --accent: #ff6b35; --surface: #141414; --surface-raised: #1e1e1e; --surface-strong: #2a2a2a; --border: rgba(255,255,255,0.08); --text-secondary: rgba(255,255,255,0.6); --text-muted: rgba(255,255,255,0.35); --danger: #ef4444; --success: #22c55e; --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --t-fast: 0.15s ease; --t-normal: 0.25s cubic-bezier(0.4,0,0.2,1); }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
 #app { width: 100%; height: 100%; position: relative; }
@@ -20,6 +20,8 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .btn:active { transform: scale(0.97); }
 .btn-primary { background: var(--accent); border-color: var(--accent); }
 .btn-primary:hover { background: #ff8555; }
+.btn-success { background: var(--success); border-color: var(--success); }
+.btn-success:hover { background: #4ade80; }
 .btn-danger { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: var(--danger); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--text-secondary); }
 .btn-ghost:hover { background: rgba(255,255,255,0.06); color: #fff; }
@@ -36,6 +38,7 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .manga-card-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .manga-card-meta { font-size: 12px; color: var(--text-muted); }
 .manga-card-badge { position: absolute; top: 8px; right: 8px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.manga-card-lock { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; display: flex; align-items: center; gap: 4px; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: var(--text-muted); }
 .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.3; }
 .empty-state h3 { color: var(--text-secondary); font-size: 16px; margin-bottom: 6px; }
@@ -56,6 +59,7 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .admin-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
 .form-group { margin-bottom: 14px; }
 .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+.form-label .required { color: var(--accent); }
 .form-input, .form-textarea { width: 100%; padding: 10px 12px; background: var(--surface-raised); border: 1px solid var(--border); border-radius: var(--radius-md); color: #fff; font-size: 14px; outline: none; }
 .form-input:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
 .form-textarea { min-height: 80px; resize: vertical; }
@@ -119,6 +123,8 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
 .toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .toast { background: var(--surface-strong); color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: 1px solid var(--border); animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards; pointer-events: auto; }
+.toast.toast-success { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.15); color: #4ade80; }
+.toast.toast-error { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.15); color: #f87171; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(10px); } }
 .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
@@ -127,6 +133,20 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .tab:hover:not(.active) { color: var(--text-secondary); }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { animation: fadeInUp 0.35s ease both; }
+.role-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.role-badge.reader { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+.role-badge.creator { background: rgba(255,107,53,0.15); color: #ff8555; border: 1px solid rgba(255,107,53,0.2); }
+.lock-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.password-strength { height: 3px; border-radius: 2px; margin-top: 6px; transition: all var(--t-fast); }
+.creator-banner { background: linear-gradient(135deg, rgba(255,107,53,0.1), rgba(255,107,53,0.05)); border: 1px solid rgba(255,107,53,0.15); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; }
+.creator-banner h3 { font-size: 15px; margin-bottom: 4px; color: #fff; }
+.creator-banner p { font-size: 13px; color: var(--text-secondary); }
+.search-box { width: 100%; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); color: #fff; font-size: 14px; margin-bottom: 16px; outline: none; }
+.search-box:focus { border-color: var(--accent); }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+.filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 13px; cursor: pointer; white-space: nowrap; transition: all var(--t-fast); }
+.filter-chip:hover { background: var(--surface-raised); color: var(--text-secondary); }
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 @media (min-width: 768px) { .manga-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } .manga-detail-cover { width: 160px; min-width: 160px; } }
 </style>
 <base target="_blank">
@@ -134,22 +154,29 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 <body>
 <div id="app">
 
-<!-- HOME VIEW -->
+<!-- HOME VIEW (LEITORES) -->
 <div id="home-view" class="view active">
   <header class="app-header">
     <h1>MangaReader Pro</h1>
-    <div class="header-actions">
-      <button class="btn btn-ghost btn-icon" id="btn-admin-header" title="Painel Admin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <div class="header-actions" style="display:flex;gap:8px;align-items:center">
+      <span class="role-badge reader" id="home-role-badge">Leitor</span>
+      <button class="btn btn-primary btn-sm" id="btn-creator-panel" title="Painel do Criador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Criador
       </button>
     </div>
   </header>
   <div class="content" id="home-content">
+    <input type="text" class="search-box" id="home-search" placeholder="🔍 Buscar mangá por título ou autor...">
+    <div class="filter-bar" id="home-filters">
+      <button class="filter-chip active" data-filter="all">Todos</button>
+      <button class="filter-chip" data-filter="recent">Recentes</button>
+      <button class="filter-chip" data-filter="popular">Mais Capítulos</button>
+    </div>
     <div class="empty-state" id="home-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
       <h3>Nenhum mangá ainda</h3>
-      <p>Adicione seus mangás no painel de administração</p>
-      <button class="btn btn-primary" style="margin-top:16px" id="btn-admin-empty">Ir para Admin</button>
+      <p>Seja o primeiro a publicar uma obra!</p>
     </div>
     <div class="manga-grid" id="manga-grid" style="display:none"></div>
   </div>
@@ -161,8 +188,9 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
     <button class="btn btn-ghost btn-icon" id="btn-detail-back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     </button>
-    <div class="header-actions">
-      <button class="btn btn-ghost btn-icon" id="btn-detail-edit">
+    <div class="header-actions" style="display:flex;gap:8px;align-items:center">
+      <span class="role-badge reader" id="detail-role-badge">Leitor</span>
+      <button class="btn btn-ghost btn-icon" id="btn-detail-edit" style="display:none" title="Editar Mangá">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </button>
     </div>
@@ -170,60 +198,132 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
   <div class="content" id="detail-content"></div>
 </div>
 
-<!-- ADMIN VIEW -->
-<div id="admin-view" class="view">
+<!-- CREATOR DASHBOARD VIEW -->
+<div id="creator-view" class="view">
   <header class="app-header">
-    <button class="btn btn-ghost btn-icon" id="btn-admin-back">
+    <button class="btn btn-ghost btn-icon" id="btn-creator-back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     </button>
-    <h1 style="font-size:16px">Painel Admin</h1>
+    <h1 style="font-size:16px">Painel do Criador</h1>
     <div style="width:36px"></div>
   </header>
   <div class="content">
+    <div class="creator-banner animate-in">
+      <h3>🎨 Área dos Criadores</h3>
+      <p>Aqui você gerencia suas obras. Para editar um mangá, digite a senha dele. Leitores não têm acesso a esta área.</p>
+    </div>
     <div class="tabs">
-      <button class="tab active" data-tab="mangas" id="tab-mangas">Mangás</button>
-      <button class="tab" data-tab="add" id="tab-add">Adicionar</button>
+      <button class="tab active" data-tab="my-mangas" id="tab-my-mangas">Minhas Obras</button>
+      <button class="tab" data-tab="add-manga" id="tab-add-manga">Nova Obra</button>
     </div>
-    <div id="admin-tab-mangas">
-      <div class="admin-manga-list" id="admin-manga-list"></div>
+    <div id="creator-tab-my-mangas">
+      <div class="admin-manga-list" id="creator-manga-list"></div>
     </div>
-    <div id="admin-tab-add" style="display:none">
+    <div id="creator-tab-add-manga" style="display:none">
       <div class="admin-section">
-        <div class="admin-section-title">Informações do Mangá</div>
+        <div class="admin-section-title">Nova Obra</div>
         <div class="admin-form">
-          <input type="hidden" id="edit-manga-id">
+          <input type="hidden" id="creator-edit-manga-id">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Título</label>
-              <input type="text" class="form-input" id="manga-title" placeholder="Ex: One Piece">
+              <label class="form-label">Título <span class="required">*</span></label>
+              <input type="text" class="form-input" id="creator-manga-title" placeholder="Ex: One Piece">
             </div>
             <div class="form-group">
               <label class="form-label">Autor</label>
-              <input type="text" class="form-input" id="manga-author" placeholder="Ex: Eiichiro Oda">
+              <input type="text" class="form-input" id="creator-manga-author" placeholder="Ex: Eiichiro Oda">
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">Descrição</label>
-            <textarea class="form-textarea" id="manga-desc" placeholder="Sinopse do mangá..."></textarea>
+            <textarea class="form-textarea" id="creator-manga-desc" placeholder="Sinopse do mangá..."></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Capa (URL da imagem)</label>
-            <input type="text" class="form-input" id="manga-cover" placeholder="https://...">
+            <input type="text" class="form-input" id="creator-manga-cover" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha de Edição <span class="required">*</span></label>
+            <input type="password" class="form-input" id="creator-manga-password" placeholder="Mínimo 4 caracteres">
+            <div class="lock-hint">Esta senha será solicitada sempre que alguém tentar editar este mangá.</div>
+            <div class="password-strength" id="password-strength" style="background:var(--border)"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+            <button class="btn btn-ghost" id="btn-creator-clear">Limpar</button>
+            <button class="btn btn-success" id="btn-creator-save-manga">Criar Obra</button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITOR VIEW (Editar mangá existente + adicionar capítulos) -->
+<div id="editor-view" class="view">
+  <header class="app-header">
+    <button class="btn btn-ghost btn-icon" id="btn-editor-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <h1 style="font-size:16px" id="editor-header-title">Editar Obra</h1>
+    <div style="width:36px"></div>
+  </header>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab active" data-tab="edit-info" id="tab-edit-info">Informações</button>
+      <button class="tab" data-tab="add-chapter" id="tab-add-chapter">Novo Capítulo</button>
+      <button class="tab" data-tab="chapters" id="tab-chapters">Capítulos</button>
+    </div>
+
+    <div id="editor-tab-edit-info">
       <div class="admin-section">
-        <div class="admin-section-title">Capítulo</div>
+        <div class="admin-section-title">Dados da Obra</div>
         <div class="admin-form">
-          <input type="hidden" id="edit-chapter-id">
+          <input type="hidden" id="editor-manga-id">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Número do Capítulo</label>
-              <input type="text" class="form-input" id="chapter-number" placeholder="Ex: 1">
+              <label class="form-label">Título <span class="required">*</span></label>
+              <input type="text" class="form-input" id="editor-manga-title">
             </div>
             <div class="form-group">
-              <label class="form-label">Título do Capítulo (opcional)</label>
-              <input type="text" class="form-input" id="chapter-title" placeholder="Ex: O início da jornada">
+              <label class="form-label">Autor</label>
+              <input type="text" class="form-input" id="editor-manga-author">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descrição</label>
+            <textarea class="form-textarea" id="editor-manga-desc"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Capa (URL)</label>
+            <input type="text" class="form-input" id="editor-manga-cover">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alterar Senha (deixe em branco para manter a atual)</label>
+            <input type="password" class="form-input" id="editor-manga-password" placeholder="Nova senha de edição">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px;justify-content:space-between">
+            <button class="btn btn-danger" id="btn-editor-delete-manga">Excluir Obra</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost" id="btn-editor-cancel">Cancelar</button>
+              <button class="btn btn-primary" id="btn-editor-save-info">Salvar Alterações</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="editor-tab-add-chapter" style="display:none">
+      <div class="admin-section">
+        <div class="admin-section-title">Novo Capítulo</div>
+        <div class="admin-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Número <span class="required">*</span></label>
+              <input type="text" class="form-input" id="editor-chapter-number" placeholder="Ex: 1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Título (opcional)</label>
+              <input type="text" class="form-input" id="editor-chapter-title" placeholder="Ex: O início da jornada">
             </div>
           </div>
         </div>
@@ -231,20 +331,27 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
       <div class="admin-section">
         <div class="admin-section-title">Páginas do Capítulo</div>
         <div class="admin-form">
-          <div class="page-manager" id="page-manager">
+          <div class="page-manager" id="editor-page-manager">
             <div class="page-manager-hint">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;opacity:0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <div>Arraste imagens aqui ou cole URLs</div>
             </div>
-            <small>ou cole URLs de imagens separadas por vírgula/linha</small>
-            <textarea class="form-textarea" id="page-urls" style="margin-top:12px;min-height:60px;font-size:12px" placeholder="https://exemplo.com/pag1.jpg&#10;https://exemplo.com/pag2.jpg"></textarea>
+            <small style="color:var(--text-muted)">ou cole URLs de imagens separadas por vírgula/linha</small>
+            <textarea class="form-textarea" id="editor-page-urls" style="margin-top:12px;min-height:60px;font-size:12px" placeholder="https://exemplo.com/pag1.jpg&#10;https://exemplo.com/pag2.jpg"></textarea>
           </div>
-          <div class="page-preview-grid" id="page-preview-grid"></div>
+          <div class="page-preview-grid" id="editor-page-preview-grid"></div>
           <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
-            <button class="btn btn-ghost" id="btn-clear-pages">Limpar</button>
-            <button class="btn btn-primary" id="btn-save-manga">Salvar Mangá / Capítulo</button>
+            <button class="btn btn-ghost" id="btn-editor-clear-pages">Limpar</button>
+            <button class="btn btn-primary" id="btn-editor-save-chapter">Salvar Capítulo</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="editor-tab-chapters" style="display:none">
+      <div class="admin-section">
+        <div class="admin-section-title">Capítulos Publicados</div>
+        <div class="chapter-list" id="editor-chapter-list"></div>
       </div>
     </div>
   </div>
@@ -303,7 +410,28 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="password-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="password-modal-title">🔒 Acesso Restrito</h3>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px" id="password-modal-desc">Digite a senha de edição para acessar este mangá.</p>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Senha</label>
+        <input type="password" class="form-input" id="password-input" placeholder="Digite a senha..." style="font-size:16px">
+        <p style="font-size:12px;color:var(--text-muted);margin-top:8px" id="password-modal-hint">Somente o criador da obra ou editores autorizados possuem esta senha.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-password-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-password-submit">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERIC MODAL -->
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-header">
@@ -321,7 +449,6 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 <div class="toast-container" id="toast-container"></div>
 
 </div>
-
 <script>
 (function() {
 'use strict';
@@ -333,9 +460,12 @@ const app = {
   readerState: { pageIndex: 0, uiVisible: false, pages: [] },
   tempPages: [],
   dragSrc: null,
+  pendingAuthMangaId: null,
+  authCallback: null,
 
   init() {
     this.loadData();
+    this.migrateData();
     this.bindEvents();
     this.setupKeyboard();
     this.setupSwipe();
@@ -354,44 +484,70 @@ const app = {
       localStorage.setItem('mangareader_data', JSON.stringify(this.data));
     } catch(e) { console.error('Erro ao salvar dados:', e); }
   },
+  migrateData() {
+    let changed = false;
+    this.data.mangas.forEach(m => {
+      if (!m.password) { m.password = ''; changed = true; }
+      if (!m.createdAt) { m.createdAt = Date.now(); changed = true; }
+    });
+    if (changed) this.saveData();
+  },
 
-  bindEvents() {
-    const on = (id, evt, fn) => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener(evt, fn);
-    };
+  // ===================== AUTH =====================
+  isAuthenticated(mangaId) {
+    return sessionStorage.getItem('manga_auth_' + mangaId) === '1';
+  },
+  setAuthenticated(mangaId) {
+    sessionStorage.setItem('manga_auth_' + mangaId, '1');
+  },
+  clearAuthenticated(mangaId) {
+    sessionStorage.removeItem('manga_auth_' + mangaId);
+  },
 
-    on('btn-admin-header', 'click', () => this.goToAdmin());
-    on('btn-admin-empty', 'click', () => this.goToAdmin());
-    on('btn-detail-back', 'click', () => this.goHome());
-    on('btn-detail-edit', 'click', () => this.editCurrentManga());
-    on('btn-admin-back', 'click', () => this.goHome());
-    on('tab-mangas', 'click', () => this.switchAdminTab('mangas'));
-    on('tab-add', 'click', () => this.switchAdminTab('add'));
-    on('btn-clear-pages', 'click', () => this.clearPages());
-    on('btn-save-manga', 'click', () => this.saveManga());
-    on('touch-left', 'click', () => this.readerPrev());
-    on('touch-center', 'click', () => this.readerToggleUI());
-    on('touch-right', 'click', () => this.readerNext());
-    on('nav-prev', 'click', () => this.readerPrev());
-    on('nav-next', 'click', () => this.readerNext());
-    on('btn-reader-close', 'click', () => this.readerClose());
-    on('btn-toggle-fs', 'click', () => this.toggleFullscreen());
-    on('btn-end-back', 'click', () => this.readerClose());
-    on('btn-end-next', 'click', () => this.readerNextChapter());
-    on('btn-modal-close', 'click', () => this.closeModal());
+  requirePassword(mangaId, callback) {
+    const m = this.data.mangas.find(x => x.id === mangaId);
+    if (!m) return;
+    if (!m.password) {
+      this.setAuthenticated(mangaId);
+      if (callback) callback(true);
+      return;
+    }
+    if (this.isAuthenticated(mangaId)) {
+      if (callback) callback(true);
+      return;
+    }
+    this.pendingAuthMangaId = mangaId;
+    this.authCallback = callback;
+    document.getElementById('password-modal-title').textContent = '🔒 ' + this.escapeHtml(m.title);
+    document.getElementById('password-modal-desc').textContent = 'Digite a senha de edição para acessar "' + this.escapeHtml(m.title) + '".';
+    document.getElementById('password-input').value = '';
+    document.getElementById('password-modal-overlay').classList.add('active');
+    setTimeout(() => document.getElementById('password-input').focus(), 100);
+  },
 
-    const modalOverlay = document.getElementById('modal-overlay');
-    if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) this.closeModal(); });
-
-    const pageManager = document.getElementById('page-manager');
-    if (pageManager) {
-      pageManager.addEventListener('dragover', (e) => this.handleDragOver(e));
-      pageManager.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-      pageManager.addEventListener('drop', (e) => this.handleDrop(e));
+  submitPassword() {
+    const input = document.getElementById('password-input').value;
+    const m = this.data.mangas.find(x => x.id === this.pendingAuthMangaId);
+    if (!m) return;
+    if (input === m.password) {
+      this.setAuthenticated(m.id);
+      this.closePasswordModal();
+      this.showToast('Acesso liberado!', 'success');
+      if (this.authCallback) this.authCallback(true);
+    } else {
+      this.showToast('Senha incorreta!', 'error');
+      document.getElementById('password-input').value = '';
+      document.getElementById('password-input').focus();
     }
   },
 
+  closePasswordModal() {
+    document.getElementById('password-modal-overlay').classList.remove('active');
+    this.pendingAuthMangaId = null;
+    this.authCallback = null;
+  },
+
+  // ===================== NAVIGATION =====================
   switchView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     const view = document.getElementById(viewId);
@@ -400,10 +556,10 @@ const app = {
 
   goHome() { this.switchView('home-view'); this.renderHome(); },
 
-  goToAdmin() {
-    this.switchView('admin-view');
-    this.renderAdminMangas();
-    this.switchAdminTab('mangas');
+  goToCreator() {
+    this.switchView('creator-view');
+    this.renderCreatorMangas();
+    this.switchCreatorTab('my-mangas');
   },
 
   goToDetail(mangaId) {
@@ -413,31 +569,65 @@ const app = {
     this.switchView('detail-view');
   },
 
+  goToEditor(mangaId) {
+    this.requirePassword(mangaId, (ok) => {
+      if (!ok) return;
+      const m = this.data.mangas.find(x => x.id === mangaId);
+      if (!m) return;
+      this.currentManga = m;
+      document.getElementById('editor-header-title').textContent = 'Editar: ' + m.title;
+      document.getElementById('editor-manga-id').value = m.id;
+      document.getElementById('editor-manga-title').value = m.title;
+      document.getElementById('editor-manga-author').value = m.author || '';
+      document.getElementById('editor-manga-desc').value = m.description || '';
+      document.getElementById('editor-manga-cover').value = m.cover || '';
+      document.getElementById('editor-manga-password').value = '';
+      this.switchEditorTab('edit-info');
+      this.switchView('editor-view');
+    });
+  },
+
+  // ===================== HOME / READER =====================
   renderHome() {
     const grid = document.getElementById('manga-grid');
     const empty = document.getElementById('home-empty');
-    if (!this.data.mangas.length) {
+    const searchVal = (document.getElementById('home-search')?.value || '').toLowerCase();
+    const activeFilter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
+
+    let mangas = [...this.data.mangas];
+    if (searchVal) {
+      mangas = mangas.filter(m =>
+        (m.title || '').toLowerCase().includes(searchVal) ||
+        (m.author || '').toLowerCase().includes(searchVal)
+      );
+    }
+    if (activeFilter === 'recent') {
+      mangas.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else if (activeFilter === 'popular') {
+      mangas.sort((a, b) => (b.chapters?.length || 0) - (a.chapters?.length || 0));
+    }
+
+    if (!mangas.length) {
       if (grid) grid.style.display = 'none';
-      if (empty) empty.style.display = 'flex';
+      if (empty) { empty.style.display = 'flex'; empty.querySelector('h3').textContent = searchVal ? 'Nenhum resultado' : 'Nenhum mangá ainda'; empty.querySelector('p').textContent = searchVal ? 'Tente outro termo de busca.' : 'Seja o primeiro a publicar uma obra!'; }
       return;
     }
     if (empty) empty.style.display = 'none';
     if (grid) {
       grid.style.display = 'grid';
-      grid.innerHTML = this.data.mangas.map((m, i) => {
+      grid.innerHTML = mangas.map((m, i) => {
         const totalChaps = m.chapters?.length || 0;
         const totalPages = m.chapters?.reduce((a,c) => a + (c.pages?.length||0), 0) || 0;
+        const hasPassword = !!m.password;
         return `<div class="manga-card animate-in" style="animation-delay:${i*0.05}s" data-manga-id="${m.id}">` +
           `<img class="manga-cover" src="${m.cover || ''}" alt="${this.escapeHtml(m.title)}" onerror="this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'">` +
           (totalChaps > 0 ? `<span class="manga-card-badge">${totalChaps} cap</span>` : '') +
+          (hasPassword ? `<span class="manga-card-lock">🔒 Protegido</span>` : '') +
           `<div class="manga-card-info"><div class="manga-card-title">${this.escapeHtml(m.title)}</div>` +
           `<div class="manga-card-meta">${this.escapeHtml(m.author || 'Autor desconhecido')} · ${totalPages} pág</div></div></div>`;
       }).join('');
       grid.querySelectorAll('.manga-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const id = card.dataset.mangaId;
-          if (id) this.goToDetail(id);
-        });
+        card.addEventListener('click', () => { const id = card.dataset.mangaId; if (id) this.goToDetail(id); });
       });
     }
   },
@@ -445,13 +635,22 @@ const app = {
   renderDetail() {
     const m = this.currentManga;
     const container = document.getElementById('detail-content');
+    const editBtn = document.getElementById('btn-detail-edit');
     if (!m || !container) return;
-    const chaps = [...(m.chapters || [])];
-    chaps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+    if (this.isAuthenticated(m.id)) {
+      editBtn.style.display = 'inline-flex';
+      document.getElementById('detail-role-badge').textContent = 'Editor';
+      document.getElementById('detail-role-badge').className = 'role-badge creator';
+    } else {
+      editBtn.style.display = 'none';
+      document.getElementById('detail-role-badge').textContent = 'Leitor';
+      document.getElementById('detail-role-badge').className = 'role-badge reader';
+    }
+    const chaps = [...(m.chapters || [])].sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
     container.innerHTML = `<div class="animate-in"><div class="manga-detail-header">` +
       `<img class="manga-detail-cover" src="${m.cover || ''}" alt="${this.escapeHtml(m.title)}" onerror="this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)'">` +
       `<div class="manga-detail-info"><div class="manga-detail-title">${this.escapeHtml(m.title)}</div>` +
-      `<div class="manga-detail-meta">${this.escapeHtml(m.author || 'Autor desconhecido')} · ${chaps.length} capítulos</div>` +
+      `<div class="manga-detail-meta">${this.escapeHtml(m.author || 'Autor desconhecido')} · ${chaps.length} capítulos ${m.password ? '· 🔒 Protegido' : ''}</div>` +
       `<div class="manga-detail-desc">${this.escapeHtml(m.description || 'Sem descrição.')}</div></div></div>` +
       `<div class="admin-section"><div class="admin-section-title">Capítulos</div><div class="chapter-list">` +
       (chaps.length ? chaps.map(c =>
@@ -478,163 +677,212 @@ const app = {
     });
   },
 
-  editCurrentManga() {
-    if (!this.currentManga) return;
-    this.editManga(this.currentManga.id);
+  // ===================== CREATOR DASHBOARD =====================
+  switchCreatorTab(tab) {
+    document.querySelectorAll('#creator-view .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    const tabMy = document.getElementById('creator-tab-my-mangas');
+    const tabAdd = document.getElementById('creator-tab-add-manga');
+    if (tabMy) tabMy.style.display = tab === 'my-mangas' ? 'block' : 'none';
+    if (tabAdd) tabAdd.style.display = tab === 'add-manga' ? 'block' : 'none';
+    if (tab === 'my-mangas') this.renderCreatorMangas();
   },
 
-  switchAdminTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    const tabMangas = document.getElementById('admin-tab-mangas');
-    const tabAdd = document.getElementById('admin-tab-add');
-    if (tabMangas) tabMangas.style.display = tab === 'mangas' ? 'block' : 'none';
-    if (tabAdd) tabAdd.style.display = tab === 'add' ? 'block' : 'none';
-    if (tab === 'mangas') this.renderAdminMangas();
-  },
-
-  renderAdminMangas() {
-    const list = document.getElementById('admin-manga-list');
+  renderCreatorMangas() {
+    const list = document.getElementById('creator-manga-list');
     if (!list) return;
     if (!this.data.mangas.length) {
-      list.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:24px">Nenhum mangá cadastrado. Vá em "Adicionar" para começar.</div>';
+      list.innerHTML = '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:24px">Nenhum mangá cadastrado. Vá em "Nova Obra" para começar.</div>';
       return;
     }
     list.innerHTML = this.data.mangas.map(m => {
       const chapCount = m.chapters?.length || 0;
+      const isAuth = this.isAuthenticated(m.id);
       return `<div class="admin-manga-item" data-manga-id="${m.id}">` +
         `<img class="admin-manga-thumb" src="${m.cover || ''}" onerror="this.style.background='var(--surface-strong)'" alt="">` +
-        `<div class="admin-manga-info"><div class="admin-manga-title">${this.escapeHtml(m.title)}</div>` +
-        `<div class="admin-manga-chaps">${chapCount} capítulos · ${this.escapeHtml(m.author || 'Sem autor')}</div></div>` +
-        `<div class="admin-manga-actions">` +
-        `<button class="btn btn-ghost btn-sm btn-icon btn-admin-edit" data-manga-id="${m.id}" title="Editar">` +
-        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>` +
-        `<button class="btn btn-danger btn-sm btn-icon btn-admin-delete" data-manga-id="${m.id}" title="Excluir">` +
-        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` +
+        `<div class="admin-manga-info" style="flex:1;min-width:0">` +
+        `<div class="admin-manga-title">${this.escapeHtml(m.title)} ${m.password ? '🔒' : ''}</div>` +
+        `<div class="admin-manga-chaps">${chapCount} capítulos · ${this.escapeHtml(m.author || 'Sem autor')} ${isAuth ? '· ✅ Autenticado' : ''}</div></div>` +
+        `<div class="admin-manga-actions" style="opacity:1">` +
+        (isAuth
+          ? `<button class="btn btn-primary btn-sm btn-icon btn-creator-edit" data-manga-id="${m.id}" title="Editar">` +
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>`
+          : `<button class="btn btn-ghost btn-sm btn-creator-unlock" data-manga-id="${m.id}" title="Desbloquear">` +
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></button>`
+        ) +
         `</div></div>`;
     }).join('');
 
-    list.querySelectorAll('.btn-admin-edit').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); this.editManga(btn.dataset.mangaId); });
+    list.querySelectorAll('.btn-creator-edit').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); this.goToEditor(btn.dataset.mangaId); });
     });
-    list.querySelectorAll('.btn-admin-delete').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteManga(btn.dataset.mangaId); });
+    list.querySelectorAll('.btn-creator-unlock').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); this.goToEditor(btn.dataset.mangaId); });
     });
   },
 
-  editManga(mangaId) {
-    const m = this.data.mangas.find(x => x.id === mangaId);
+  saveCreatorManga() {
+    const title = document.getElementById('creator-manga-title').value.trim();
+    const author = document.getElementById('creator-manga-author').value.trim();
+    const desc = document.getElementById('creator-manga-desc').value.trim();
+    const cover = document.getElementById('creator-manga-cover').value.trim();
+    const password = document.getElementById('creator-manga-password').value;
+
+    if (!title) { this.showToast('Digite o título do mangá'); return; }
+    if (password.length < 4) { this.showToast('A senha deve ter no mínimo 4 caracteres'); return; }
+
+    const newManga = {
+      id: 'm_' + Date.now(), title, author, description: desc, cover,
+      password: password, createdAt: Date.now(), chapters: []
+    };
+    this.data.mangas.push(newManga);
+    this.saveData();
+    this.setAuthenticated(newManga.id);
+    this.showToast('Obra criada com sucesso!', 'success');
+    this.clearCreatorForm();
+    this.switchCreatorTab('my-mangas');
+  },
+
+  clearCreatorForm() {
+    document.getElementById('creator-manga-title').value = '';
+    document.getElementById('creator-manga-author').value = '';
+    document.getElementById('creator-manga-desc').value = '';
+    document.getElementById('creator-manga-cover').value = '';
+    document.getElementById('creator-manga-password').value = '';
+    document.getElementById('password-strength').style.background = 'var(--border)';
+  },
+
+  // ===================== EDITOR VIEW =====================
+  switchEditorTab(tab) {
+    document.querySelectorAll('#editor-view .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('editor-tab-edit-info').style.display = tab === 'edit-info' ? 'block' : 'none';
+    document.getElementById('editor-tab-add-chapter').style.display = tab === 'add-chapter' ? 'block' : 'none';
+    document.getElementById('editor-tab-chapters').style.display = tab === 'chapters' ? 'block' : 'none';
+    if (tab === 'chapters') this.renderEditorChapters();
+    if (tab === 'add-chapter') {
+      this.tempPages = [];
+      document.getElementById('editor-page-urls').value = '';
+      this.renderEditorPagePreviews();
+    }
+  },
+
+  renderEditorChapters() {
+    const m = this.currentManga;
+    const list = document.getElementById('editor-chapter-list');
+    if (!m || !list) return;
+    const chaps = [...(m.chapters || [])].sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+    list.innerHTML = chaps.length ? chaps.map(c =>
+      `<div class="chapter-item"><div class="chapter-item-left">` +
+      `<div class="chapter-number">${c.number}</div><div><div class="chapter-title">${this.escapeHtml(c.title || 'Capítulo ' + c.number)}</div>` +
+      `<div class="chapter-pages">${c.pages?.length || 0} páginas</div></div></div>` +
+      `<div class="chapter-item-right" style="display:flex;gap:4px">` +
+      `<button class="btn btn-danger btn-sm btn-icon btn-editor-delete-chap" data-chapter-id="${c.id}" title="Excluir">` +
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>` +
+      `</div></div>`
+    ).join('') : '<div style="color:var(--text-muted);font-size:14px;text-align:center;padding:20px">Nenhum capítulo ainda.</div>';
+
+    list.querySelectorAll('.btn-editor-delete-chap').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cid = btn.dataset.chapterId;
+        const chap = m.chapters?.find(c => c.id === cid);
+        this.showModal('Excluir capítulo', 'Tem certeza que deseja excluir "' + this.escapeHtml(chap?.title || 'Capítulo ' + chap?.number) + '"? Esta ação não pode ser desfeita.', [
+          { text: 'Cancelar', class: 'btn-ghost', action: () => this.closeModal() },
+          { text: 'Excluir', class: 'btn-danger', action: () => {
+            m.chapters = m.chapters.filter(c => c.id !== cid);
+            this.saveData();
+            this.renderEditorChapters();
+            this.closeModal();
+            this.showToast('Capítulo excluído');
+          }}
+        ]);
+      });
+    });
+  },
+
+  saveEditorInfo() {
+    const m = this.currentManga;
     if (!m) return;
-    document.getElementById('edit-manga-id').value = m.id;
-    document.getElementById('manga-title').value = m.title;
-    document.getElementById('manga-author').value = m.author || '';
-    document.getElementById('manga-desc').value = m.description || '';
-    document.getElementById('manga-cover').value = m.cover || '';
-    document.getElementById('edit-chapter-id').value = '';
-    document.getElementById('chapter-number').value = '';
-    document.getElementById('chapter-title').value = '';
-    this.tempPages = [];
-    this.renderPagePreviews();
-    this.switchAdminTab('add');
-    this.showToast('Editando: ' + m.title);
+    const title = document.getElementById('editor-manga-title').value.trim();
+    const author = document.getElementById('editor-manga-author').value.trim();
+    const desc = document.getElementById('editor-manga-desc').value.trim();
+    const cover = document.getElementById('editor-manga-cover').value.trim();
+    const newPassword = document.getElementById('editor-manga-password').value;
+
+    if (!title) { this.showToast('Digite o título'); return; }
+    m.title = title; m.author = author; m.description = desc; m.cover = cover;
+    if (newPassword) {
+      if (newPassword.length < 4) { this.showToast('A senha deve ter no mínimo 4 caracteres'); return; }
+      m.password = newPassword;
+    }
+    this.saveData();
+    this.showToast('Alterações salvas!', 'success');
   },
 
-  deleteManga(mangaId) {
-    const m = this.data.mangas.find(x => x.id === mangaId);
-    this.showModal('Excluir mangá', 'Tem certeza que deseja excluir "' + (m?.title || 'este mangá') + '" e todos os seus capítulos? Esta ação não pode ser desfeita.', [
+  deleteEditorManga() {
+    const m = this.currentManga;
+    if (!m) return;
+    this.showModal('Excluir obra', 'Tem certeza que deseja excluir "' + this.escapeHtml(m.title) + '" e TODOS os seus capítulos? Esta ação não pode ser desfeita.', [
       { text: 'Cancelar', class: 'btn-ghost', action: () => this.closeModal() },
       { text: 'Excluir', class: 'btn-danger', action: () => {
-        this.data.mangas = this.data.mangas.filter(m => m.id !== mangaId);
+        this.data.mangas = this.data.mangas.filter(x => x.id !== m.id);
+        this.clearAuthenticated(m.id);
         this.saveData();
-        this.renderAdminMangas();
         this.closeModal();
-        this.showToast('Mangá excluído');
+        this.showToast('Obra excluída');
+        this.goToCreator();
       }}
     ]);
   },
 
-  saveManga() {
-    const mangaId = document.getElementById('edit-manga-id').value;
-    const title = document.getElementById('manga-title').value.trim();
-    const author = document.getElementById('manga-author').value.trim();
-    const desc = document.getElementById('manga-desc').value.trim();
-    const cover = document.getElementById('manga-cover').value.trim();
-    const chapNum = document.getElementById('chapter-number').value.trim();
-    const chapTitle = document.getElementById('chapter-title').value.trim();
+  saveEditorChapter() {
+    const m = this.currentManga;
+    if (!m) return;
+    const chapNum = document.getElementById('editor-chapter-number').value.trim();
+    const chapTitle = document.getElementById('editor-chapter-title').value.trim();
+    if (!chapNum) { this.showToast('Digite o número do capítulo'); return; }
 
-    if (!title) { this.showToast('Digite o título do mangá'); return; }
-
-    const urlText = document.getElementById('page-urls').value;
+    const urlText = document.getElementById('editor-page-urls').value;
     const textUrls = urlText.split(/[\n,]+/).map(u => u.trim()).filter(u => u);
     const allPages = [...this.tempPages, ...textUrls];
+    if (!allPages.length) { this.showToast('Adicione pelo menos uma página'); return; }
 
-    if (!mangaId) {
-      if (!chapNum) { this.showToast('Digite o número do capítulo'); return; }
-      if (!allPages.length) { this.showToast('Adicione pelo menos uma página'); return; }
-      this.data.mangas.push({
-        id: 'm_' + Date.now(), title, author, description: desc, cover,
-        chapters: [{ id: 'c_' + Date.now(), number: chapNum, title: chapTitle, pages: allPages }]
-      });
+    m.chapters = m.chapters || [];
+    const existingChap = m.chapters.find(c => c.number === chapNum);
+    if (existingChap) {
+      existingChap.pages = [...(existingChap.pages||[]), ...allPages];
+      existingChap.title = chapTitle || existingChap.title;
+      this.showToast('Páginas adicionadas ao capítulo existente!', 'success');
     } else {
-      const m = this.data.mangas.find(x => x.id === mangaId);
-      if (!m) return;
-      m.title = title; m.author = author; m.description = desc; m.cover = cover;
-      if (chapNum) {
-        if (!allPages.length) { this.showToast('Adicione pelo menos uma página'); return; }
-        const existingChap = m.chapters?.find(c => c.number === chapNum);
-        if (existingChap) {
-          existingChap.pages = [...(existingChap.pages||[]), ...allPages];
-          existingChap.title = chapTitle || existingChap.title;
-        } else {
-          m.chapters = m.chapters || [];
-          m.chapters.push({ id: 'c_' + Date.now(), number: chapNum, title: chapTitle, pages: allPages });
-        }
-      }
+      m.chapters.push({ id: 'c_' + Date.now(), number: chapNum, title: chapTitle, pages: allPages });
+      this.showToast('Capítulo salvo!', 'success');
     }
-
     this.saveData();
-    this.showToast('Salvo com sucesso!');
-    this.clearForm();
-    this.switchAdminTab('mangas');
-  },
-
-  clearForm() {
-    document.getElementById('edit-manga-id').value = '';
-    document.getElementById('manga-title').value = '';
-    document.getElementById('manga-author').value = '';
-    document.getElementById('manga-desc').value = '';
-    document.getElementById('manga-cover').value = '';
-    document.getElementById('edit-chapter-id').value = '';
-    document.getElementById('chapter-number').value = '';
-    document.getElementById('chapter-title').value = '';
-    document.getElementById('page-urls').value = '';
     this.tempPages = [];
-    this.renderPagePreviews();
+    document.getElementById('editor-page-urls').value = '';
+    document.getElementById('editor-chapter-number').value = '';
+    document.getElementById('editor-chapter-title').value = '';
+    this.renderEditorPagePreviews();
   },
 
-  clearPages() {
-    this.tempPages = [];
-    document.getElementById('page-urls').value = '';
-    this.renderPagePreviews();
-  },
-
-  handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); },
-  handleDragLeave(e) { e.currentTarget.classList.remove('dragover'); },
-  handleDrop(e) {
+  // ===================== PAGE MANAGEMENT =====================
+  handleEditorDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); },
+  handleEditorDragLeave(e) { e.currentTarget.classList.remove('dragover'); },
+  handleEditorDrop(e) {
     e.preventDefault();
     e.currentTarget.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     if (!files.length) { this.showToast('Arraste apenas imagens'); return; }
     files.forEach(file => {
       const reader = new FileReader();
-      reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderPagePreviews(); };
+      reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderEditorPagePreviews(); };
       reader.readAsDataURL(file);
     });
     this.showToast(files.length + ' imagem(ns) adicionada(s)');
   },
 
-  renderPagePreviews() {
-    const grid = document.getElementById('page-preview-grid');
-    const textUrls = document.getElementById('page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
+  renderEditorPagePreviews() {
+    const grid = document.getElementById('editor-page-preview-grid');
+    const textUrls = document.getElementById('editor-page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
     const all = [...this.tempPages, ...textUrls];
     if (!grid) return;
     grid.innerHTML = all.map((url, i) =>
@@ -645,61 +893,43 @@ const app = {
     ).join('');
 
     grid.querySelectorAll('.page-preview-item').forEach((item, idx) => {
-      item.addEventListener('dragstart', (e) => {
-        this.dragSrc = idx;
-        item.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
+      item.addEventListener('dragstart', (e) => { this.dragSrc = idx; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
       item.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
       item.addEventListener('drop', (e) => {
         e.preventDefault();
         if (this.dragSrc === null || this.dragSrc === idx) return;
-        const allPages = [...this.tempPages, ...document.getElementById('page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u)];
+        const allPages = [...this.tempPages, ...document.getElementById('editor-page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u)];
         const [moved] = allPages.splice(this.dragSrc, 1);
         allPages.splice(idx, 0, moved);
         this.tempPages = allPages;
-        document.getElementById('page-urls').value = '';
-        this.renderPagePreviews();
+        document.getElementById('editor-page-urls').value = '';
+        this.renderEditorPagePreviews();
       });
       item.addEventListener('dragend', () => { item.classList.remove('dragging'); this.dragSrc = null; });
     });
     grid.querySelectorAll('.page-remove').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); this.removePage(parseInt(btn.dataset.pageIndex)); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); this.removeEditorPage(parseInt(btn.dataset.pageIndex)); });
     });
   },
 
-  removePage(index) {
-    const textUrls = document.getElementById('page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
+  removeEditorPage(index) {
+    const textUrls = document.getElementById('editor-page-urls').value.split(/[\n,]+/).map(u=>u.trim()).filter(u=>u);
     if (index < this.tempPages.length) {
       this.tempPages.splice(index, 1);
     } else {
       textUrls.splice(index - this.tempPages.length, 1);
-      document.getElementById('page-urls').value = textUrls.join('\n');
+      document.getElementById('editor-page-urls').value = textUrls.join('\n');
     }
-    this.renderPagePreviews();
+    this.renderEditorPagePreviews();
   },
 
-  setupPaste() {
-    document.addEventListener('paste', (e) => {
-      if (!document.getElementById('admin-tab-add').offsetParent) return;
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      let count = 0;
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          const file = item.getAsFile();
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderPagePreviews(); };
-            reader.readAsDataURL(file);
-            count++;
-          }
-        }
-      }
-      if (count) this.showToast(count + ' imagem(ns) colada(s)');
-    });
+  clearEditorPages() {
+    this.tempPages = [];
+    document.getElementById('editor-page-urls').value = '';
+    this.renderEditorPagePreviews();
   },
 
+  // ===================== READER =====================
   openReader(mangaId, chapterId) {
     const m = this.data.mangas.find(x => x.id === mangaId);
     const c = m?.chapters?.find(x => x.id === chapterId);
@@ -778,7 +1008,6 @@ const app = {
     if (nextBtn && nextChap) nextBtn.onclick = () => { this.openReader(m.id, nextChap.id); };
     if (endScreen) endScreen.classList.add('active');
   },
-  readerNextChapter() {},
 
   requestFullscreen() {
     const el = document.documentElement;
@@ -789,7 +1018,7 @@ const app = {
   exitFullscreen() {
     if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.msExitFullscreen) document.msExitFullscreen();
+    else if (document.msRequestFullscreen) document.msExitFullscreen();
   },
   toggleFullscreen() {
     if (document.fullscreenElement) this.exitFullscreen();
@@ -821,6 +1050,104 @@ const app = {
     });
   },
 
+  setupPaste() {
+    document.addEventListener('paste', (e) => {
+      if (!document.getElementById('editor-tab-add-chapter').offsetParent) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      let count = 0;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderEditorPagePreviews(); };
+            reader.readAsDataURL(file);
+            count++;
+          }
+        }
+      }
+      if (count) this.showToast(count + ' imagem(ns) colada(s)');
+    });
+  },
+
+  // ===================== EVENTS =====================
+  bindEvents() {
+    const on = (id, evt, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(evt, fn); };
+
+    // Home
+    on('btn-creator-panel', 'click', () => this.goToCreator());
+    on('home-search', 'input', () => this.renderHome());
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        this.renderHome();
+      });
+    });
+
+    // Detail
+    on('btn-detail-back', 'click', () => this.goHome());
+    on('btn-detail-edit', 'click', () => { if (this.currentManga) this.goToEditor(this.currentManga.id); });
+
+    // Creator
+    on('btn-creator-back', 'click', () => this.goHome());
+    on('tab-my-mangas', 'click', () => this.switchCreatorTab('my-mangas'));
+    on('tab-add-manga', 'click', () => this.switchCreatorTab('add-manga'));
+    on('btn-creator-clear', 'click', () => this.clearCreatorForm());
+    on('btn-creator-save-manga', 'click', () => this.saveCreatorManga());
+    on('creator-manga-password', 'input', () => {
+      const val = document.getElementById('creator-manga-password').value;
+      const bar = document.getElementById('password-strength');
+      if (!val) { bar.style.background = 'var(--border)'; return; }
+      if (val.length < 4) { bar.style.background = 'var(--danger)'; }
+      else if (val.length < 8) { bar.style.background = '#fbbf24'; }
+      else { bar.style.background = 'var(--success)'; }
+    });
+
+    // Password modal
+    on('btn-password-cancel', 'click', () => this.closePasswordModal());
+    on('btn-password-submit', 'click', () => this.submitPassword());
+    on('password-input', 'keydown', (e) => { if (e.key === 'Enter') this.submitPassword(); });
+
+    // Editor
+    on('btn-editor-back', 'click', () => this.goToCreator());
+    on('tab-edit-info', 'click', () => this.switchEditorTab('edit-info'));
+    on('tab-add-chapter', 'click', () => this.switchEditorTab('add-chapter'));
+    on('tab-chapters', 'click', () => this.switchEditorTab('chapters'));
+    on('btn-editor-save-info', 'click', () => this.saveEditorInfo());
+    on('btn-editor-delete-manga', 'click', () => this.deleteEditorManga());
+    on('btn-editor-cancel', 'click', () => this.goToCreator());
+    on('btn-editor-clear-pages', 'click', () => this.clearEditorPages());
+    on('btn-editor-save-chapter', 'click', () => this.saveEditorChapter());
+
+    const pageMgr = document.getElementById('editor-page-manager');
+    if (pageMgr) {
+      pageMgr.addEventListener('dragover', (e) => this.handleEditorDragOver(e));
+      pageMgr.addEventListener('dragleave', (e) => this.handleEditorDragLeave(e));
+      pageMgr.addEventListener('drop', (e) => this.handleEditorDrop(e));
+    }
+    on('editor-page-urls', 'input', () => this.renderEditorPagePreviews());
+
+    // Reader
+    on('touch-left', 'click', () => this.readerPrev());
+    on('touch-center', 'click', () => this.readerToggleUI());
+    on('touch-right', 'click', () => this.readerNext());
+    on('nav-prev', 'click', () => this.readerPrev());
+    on('nav-next', 'click', () => this.readerNext());
+    on('btn-reader-close', 'click', () => this.readerClose());
+    on('btn-toggle-fs', 'click', () => this.toggleFullscreen());
+    on('btn-end-back', 'click', () => this.readerClose());
+    on('btn-end-next', 'click', () => {});
+    on('btn-modal-close', 'click', () => this.closeModal());
+
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) this.closeModal(); });
+    const pwdOverlay = document.getElementById('password-modal-overlay');
+    if (pwdOverlay) pwdOverlay.addEventListener('click', (e) => { if(e.target === pwdOverlay) this.closePasswordModal(); });
+  },
+
+  // ===================== UTILS =====================
   showModal(title, body, actions) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-body').innerHTML = '<p style="font-size:14px;color:var(--text-secondary);line-height:1.6">' + body + '</p>';
@@ -839,10 +1166,10 @@ const app = {
     document.getElementById('modal-overlay').classList.remove('active');
   },
 
-  showToast(msg) {
+  showToast(msg, type) {
     const container = document.getElementById('toast-container');
     const t = document.createElement('div');
-    t.className = 'toast';
+    t.className = 'toast' + (type ? ' toast-' + type : '');
     t.textContent = msg;
     container.appendChild(t);
     setTimeout(() => t.remove(), 3000);
