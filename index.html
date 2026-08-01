@@ -75,6 +75,8 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
 .admin-manga-item:hover .admin-manga-actions { opacity: 1; }
 .page-manager { border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 20px; text-align: center; margin-bottom: 16px; }
 .page-manager.dragover { border-color: var(--accent); background: rgba(255,107,53,0.05); }
+.page-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
+.page-upload-help { display: block; margin-top: 10px; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
 .page-preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-top: 12px; }
 .page-preview-item { position: relative; aspect-ratio: 3/4; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); cursor: grab; background: var(--surface-strong); }
 .page-preview-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -334,9 +336,16 @@ html, body { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSyst
           <div class="page-manager" id="editor-page-manager">
             <div class="page-manager-hint">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;opacity:0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <div>Arraste imagens aqui ou cole URLs</div>
+              <div>Arraste as imagens ou a pasta do capítulo aqui</div>
             </div>
-            <small style="color:var(--text-muted)">ou cole URLs de imagens separadas por vírgula/linha</small>
+            <div class="page-upload-actions">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-editor-select-files">Selecionar imagens</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-editor-select-folder">Selecionar pasta</button>
+            </div>
+            <input type="file" id="editor-page-files" accept="image/*" multiple hidden>
+            <input type="file" id="editor-page-folder" accept="image/*" multiple webkitdirectory directory hidden>
+            <small class="page-upload-help">No celular, toque em “Selecionar imagens”. Em navegadores compatíveis, “Selecionar pasta” importa todas as imagens da pasta.</small>
+            <small style="color:var(--text-muted);display:block;margin-top:12px">Ou cole URLs de imagens separadas por vírgula/linha</small>
             <textarea class="form-textarea" id="editor-page-urls" style="margin-top:12px;min-height:60px;font-size:12px" placeholder="https://exemplo.com/pag1.jpg&#10;https://exemplo.com/pag2.jpg"></textarea>
           </div>
           <div class="page-preview-grid" id="editor-page-preview-grid"></div>
@@ -867,17 +876,106 @@ const app = {
   // ===================== PAGE MANAGEMENT =====================
   handleEditorDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); },
   handleEditorDragLeave(e) { e.currentTarget.classList.remove('dragover'); },
-  handleEditorDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    if (!files.length) { this.showToast('Arraste apenas imagens'); return; }
-    files.forEach(file => {
+
+  isImageFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.startsWith('image/')) return true;
+    return /\.(avif|bmp|gif|heic|heif|jpe?g|png|webp)$/i.test(file.name || '');
+  },
+
+  naturalFileSort(a, b) {
+    const pathA = (a.path || a.file?.webkitRelativePath || a.file?.name || '').replace(/\\/g, '/');
+    const pathB = (b.path || b.file?.webkitRelativePath || b.file?.name || '').replace(/\\/g, '/');
+    return pathA.localeCompare(pathB, undefined, { numeric: true, sensitivity: 'base' });
+  },
+
+  readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (ev) => { this.tempPages.push(ev.target.result); this.renderEditorPagePreviews(); };
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = () => reject(reader.error || new Error('Não foi possível ler o arquivo.'));
       reader.readAsDataURL(file);
     });
-    this.showToast(files.length + ' imagem(ns) adicionada(s)');
+  },
+
+  async addEditorImageFiles(items) {
+    const normalized = Array.from(items || []).map(item => {
+      if (item?.file) return item;
+      return { file: item, path: item?.webkitRelativePath || item?.name || '' };
+    }).filter(item => this.isImageFile(item.file));
+
+    if (!normalized.length) {
+      this.showToast('Nenhuma imagem válida foi encontrada', 'error');
+      return;
+    }
+
+    normalized.sort((a, b) => this.naturalFileSort(a, b));
+
+    try {
+      const pages = await Promise.all(normalized.map(item => this.readFileAsDataURL(item.file)));
+      this.tempPages.push(...pages);
+      this.renderEditorPagePreviews();
+      this.showToast(pages.length + ' imagem(ns) adicionada(s)', 'success');
+    } catch (error) {
+      console.error('Erro ao importar imagens:', error);
+      this.showToast('Não foi possível importar uma ou mais imagens', 'error');
+    }
+  },
+
+  readDirectoryEntries(directoryReader) {
+    return new Promise((resolve, reject) => {
+      const entries = [];
+      const readBatch = () => {
+        directoryReader.readEntries(batch => {
+          if (!batch.length) { resolve(entries); return; }
+          entries.push(...batch);
+          readBatch();
+        }, reject);
+      };
+      readBatch();
+    });
+  },
+
+  async collectDroppedEntry(entry, parentPath = '') {
+    if (!entry) return [];
+    const currentPath = parentPath ? parentPath + '/' + entry.name : entry.name;
+
+    if (entry.isFile) {
+      return new Promise(resolve => {
+        entry.file(file => resolve([{ file, path: currentPath }]), () => resolve([]));
+      });
+    }
+
+    if (entry.isDirectory) {
+      const children = await this.readDirectoryEntries(entry.createReader());
+      const nested = await Promise.all(children.map(child => this.collectDroppedEntry(child, currentPath)));
+      return nested.flat();
+    }
+
+    return [];
+  },
+
+  async handleEditorDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+
+    const transferItems = Array.from(e.dataTransfer?.items || []);
+    const entries = transferItems
+      .map(item => typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null)
+      .filter(Boolean);
+
+    if (entries.length) {
+      try {
+        const grouped = await Promise.all(entries.map(entry => this.collectDroppedEntry(entry)));
+        await this.addEditorImageFiles(grouped.flat());
+      } catch (error) {
+        console.error('Erro ao ler itens arrastados:', error);
+        this.showToast('Não foi possível ler a pasta arrastada', 'error');
+      }
+      return;
+    }
+
+    await this.addEditorImageFiles(Array.from(e.dataTransfer?.files || []));
   },
 
   renderEditorPagePreviews() {
@@ -1120,6 +1218,16 @@ const app = {
     on('btn-editor-cancel', 'click', () => this.goToCreator());
     on('btn-editor-clear-pages', 'click', () => this.clearEditorPages());
     on('btn-editor-save-chapter', 'click', () => this.saveEditorChapter());
+    on('btn-editor-select-files', 'click', () => document.getElementById('editor-page-files')?.click());
+    on('btn-editor-select-folder', 'click', () => document.getElementById('editor-page-folder')?.click());
+    on('editor-page-files', 'change', async (e) => {
+      await this.addEditorImageFiles(e.target.files);
+      e.target.value = '';
+    });
+    on('editor-page-folder', 'change', async (e) => {
+      await this.addEditorImageFiles(e.target.files);
+      e.target.value = '';
+    });
 
     const pageMgr = document.getElementById('editor-page-manager');
     if (pageMgr) {
